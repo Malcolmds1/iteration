@@ -9,11 +9,11 @@ x_vec = rnorm(25, mean = 5, sd = 3)
 (x_vec - mean(x_vec)) / sd(x_vec)
 ```
 
-    ##  [1]  0.5069151  0.3318885 -0.4043052  0.2499178 -2.3357441 -1.6096828
-    ##  [7]  0.1274479  0.8120381 -0.6314062 -1.7514353  1.0623805  1.3466070
-    ## [13]  1.2443990  0.1512704  1.2620192  0.5594553 -0.4321241 -1.2629327
-    ## [19] -0.5374174  0.9411558 -0.4929008  0.4216235 -0.2760764 -0.3794509
-    ## [25]  1.0963579
+    ##  [1] -0.48541415 -0.26989008 -0.16155391  0.72048478 -0.07849473  2.18986285
+    ##  [7] -0.97069710 -1.26461194  0.31546541 -0.23227098 -1.10676311 -0.25189227
+    ## [13] -0.75661449  1.91324567  0.54455140  0.50275231  0.66268857 -1.43055264
+    ## [19]  1.18996619 -0.62834383  0.66693422  1.39676747 -0.06931332 -1.27192624
+    ## [25] -1.12438009
 
 I want a function to compute z-scores
 
@@ -28,11 +28,11 @@ z_scores = function(x) {
 z_scores(x_vec)
 ```
 
-    ##  [1]  0.5069151  0.3318885 -0.4043052  0.2499178 -2.3357441 -1.6096828
-    ##  [7]  0.1274479  0.8120381 -0.6314062 -1.7514353  1.0623805  1.3466070
-    ## [13]  1.2443990  0.1512704  1.2620192  0.5594553 -0.4321241 -1.2629327
-    ## [19] -0.5374174  0.9411558 -0.4929008  0.4216235 -0.2760764 -0.3794509
-    ## [25]  1.0963579
+    ##  [1] -0.48541415 -0.26989008 -0.16155391  0.72048478 -0.07849473  2.18986285
+    ##  [7] -0.97069710 -1.26461194  0.31546541 -0.23227098 -1.10676311 -0.25189227
+    ## [13] -0.75661449  1.91324567  0.54455140  0.50275231  0.66268857 -1.43055264
+    ## [19]  1.18996619 -0.62834383  0.66693422  1.39676747 -0.06931332 -1.27192624
+    ## [25] -1.12438009
 
 Try my function on some other thing. These should give errors
 
@@ -64,8 +64,8 @@ z_scores(iris)
 z_scores(sample(c(TRUE, FALSE), 25, replace = TRUE))
 ```
 
-    ##  [1] -1.2  0.8  0.8 -1.2 -1.2  0.8 -1.2 -1.2  0.8  0.8  0.8  0.8 -1.2 -1.2  0.8
-    ## [16] -1.2  0.8  0.8  0.8  0.8 -1.2  0.8  0.8 -1.2  0.8
+    ##  [1]  0.8  0.8  0.8  0.8  0.8  0.8 -1.2 -1.2  0.8  0.8 -1.2 -1.2  0.8  0.8  0.8
+    ## [16] -1.2  0.8 -1.2  0.8 -1.2 -1.2  0.8  0.8 -1.2 -1.2
 
 ``` r
 z_scores = function(x) {
@@ -139,7 +139,7 @@ sim_data |>
     ## # A tibble: 1 × 2
     ##   mu_hat sigma_hat
     ##    <dbl>     <dbl>
-    ## 1   1.81      2.14
+    ## 1  0.906      2.39
 
 ``` r
 sim_mean_sd = function(n, mu = 2, sigma = 3) {
@@ -155,3 +155,147 @@ sim_mean_sd = function(n, mu = 2, sigma = 3) {
     )
 }
 ```
+
+## Let’s review LoTR data
+
+``` r
+fellowship_ring = readxl::read_excel("./data/LotR_Words.xlsx", range = "B3:D6") |>
+  mutate(movie = "fellowship_ring")
+
+two_towers = readxl::read_excel("./data/LotR_Words.xlsx", range = "F3:H6") |>
+  mutate(movie = "two_towers")
+
+return_king = readxl::read_excel("./data/LotR_Words.xlsx", range = "J3:L6") |>
+  mutate(movie = "return_king")
+
+lotr_tidy = bind_rows(fellowship_ring, two_towers, return_king) |>
+  janitor::clean_names() |>
+  pivot_longer(
+    female:male,
+    names_to = "sex",
+    values_to = "words") |> 
+  mutate(race = str_to_lower(race)) |> 
+  select(movie, everything()) 
+```
+
+### Try to write a function that can be used to abstract the data loading and cleaning process. Use this function to recreate the tidied LoTR dataset.
+
+``` r
+lotr_load_and_tidy = function(path, range, movie_name) {
+  
+  df = 
+    readxl::read_excel(path, range = range) |>
+    janitor::clean_names() |>
+    pivot_longer(
+      female:male,
+      names_to = "sex",
+      values_to = "words") |>
+    mutate(
+      race = str_to_lower(race),
+      movie = movie_name) |> 
+    select(movie, everything())
+  
+  df
+  
+}
+
+lotr_tidy = 
+  bind_rows(
+    lotr_load_and_tidy("data/LotR_Words.xlsx", "B3:D6", "fellowship_ring"),
+    lotr_load_and_tidy("data/LotR_Words.xlsx", "F3:H6", "two_towers"),
+    lotr_load_and_tidy("data/LotR_Words.xlsx", "J3:L6", "return_king"))
+```
+
+## NSDUH
+
+``` r
+nsduh_url = "http://samhda.s3-us-gov-west-1.amazonaws.com/s3fs-public/field-uploads/2k15StateFiles/NSDUHsaeShortTermCHG2015.htm"
+
+nsduh_html = read_html(nsduh_url)
+
+data_marj = 
+  nsduh_html |> 
+  html_table() |> 
+  nth(1) |>
+  slice(-1) |> 
+  select(-contains("P Value")) |>
+  pivot_longer(
+    -State,
+    names_to = "age_year", 
+    values_to = "percent") |>
+  separate(age_year, into = c("age", "year"), sep = "\\(") |>
+  mutate(
+    year = str_replace(year, "\\)", ""),
+    percent = str_replace(percent, "[a-c]$", ""),
+    percent = as.numeric(percent)) |>
+  filter(!(State %in% c("Total U.S.", "Northeast", "Midwest", "South", "West")))
+```
+
+### Let’s write a quick function to scrape review information for other tables on this page. We’ll pass in the HTML data as an argument so we don’t scrape it each time, along with a number and name for the table we want to process.
+
+``` r
+nsduh_table <- function(html, table_num, table_name) {
+  
+  table = 
+    html |> 
+    html_table() |> 
+    nth(table_num) |>
+    slice(-1) |> 
+    select(-contains("P Value")) |>
+    pivot_longer(
+      -State,
+      names_to = "age_year", 
+      values_to = "percent") |>
+    separate(age_year, into = c("age", "year"), sep = "\\(") |>
+    mutate(
+      year = str_replace(year, "\\)", ""),
+      percent = str_replace(percent, "[a-c]$", ""),
+      percent = as.numeric(percent),
+      name = table_name) |>
+    filter(!(State %in% c("Total U.S.", "Northeast", "Midwest", "South", "West")))
+  
+  table
+  
+}
+```
+
+#### Next we’ll use this to get a few different tables and combine the results.
+
+``` r
+nsduh_results = 
+  bind_rows(
+    nsduh_table(nsduh_html, 1, "marj_one_year"),
+    nsduh_table(nsduh_html, 4, "cocaine_one_year"),
+    nsduh_table(nsduh_html, 5, "heroin_one_year")
+  )
+```
+
+Function as arguments
+
+``` r
+x_vec = rnorm(25, 0, 1)
+
+my_summary = function(x, summ_func) {
+  summ_func(x)
+}
+
+my_summary(x_vec, sd)
+```
+
+    ## [1] 0.6812425
+
+Scoping and names
+
+``` r
+f = function(x) {
+  z = x + y
+  z
+}
+
+x = 1
+y = 2
+
+f(x = y)
+```
+
+    ## [1] 4
